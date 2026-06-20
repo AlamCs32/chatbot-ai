@@ -5,11 +5,12 @@
     "moduleResolution": "NodeNext",
     "rootDir": "./src",
     "outDir": "./dist",
+    "types": ["node"],
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
     "sourceMap": true,
-    "resolveJsonModule": true
-  },
-  "include": ["src/**/*"]
+    "skipLibCheck": true
+  }
 }

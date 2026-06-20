@@ -3,6 +3,8 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default [
+    { ignores: [".yarn/"] },
+
     js.configs.recommended,
 
     ...tseslint.configs.recommended,
