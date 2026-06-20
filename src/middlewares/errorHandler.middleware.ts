@@ -1,14 +1,11 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 
-import { errorLogger } from '../configs/logger';
+import { childErrorLogger } from '@/configs/logger';
 
 export function errorHandler(error: Error, req: Request, res: Response, _next: NextFunction): void {
-  errorLogger.error({
-    message: error.message,
-    stack: error.stack,
-    method: req.method,
-    url: req.originalUrl,
-  });
+  childErrorLogger({ err: error, method: req.method, url: req.originalUrl }).error(
+    'internal server error',
+  );
 
   res.status(500).json({
     success: false,
