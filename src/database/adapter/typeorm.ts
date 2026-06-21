@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import pg from 'pg';
+import type mongoose from 'mongoose';
 
 import { env } from '@/configs/env';
 import { logger } from '@/configs/logger';
@@ -9,12 +10,17 @@ import type { DatabaseAdapter } from '@/database/adapter/types';
 const { Pool } = pg;
 
 export class TypeOrmAdapter implements DatabaseAdapter {
+  readonly type = 'typeorm' as const;
   private ds: DataSource;
   private pool: pg.Pool;
   private _isConnected = false;
 
   get isConnected(): boolean {
     return this._isConnected;
+  }
+
+  getMongooseConnection(): mongoose.Connection {
+    throw new Error('getMongooseConnection() is not available for TypeOrmAdapter');
   }
 
   constructor() {

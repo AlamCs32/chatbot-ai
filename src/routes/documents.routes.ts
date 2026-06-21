@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import { Document } from '@langchain/core/documents';
+import { PGVectorStore } from '@langchain/community/vectorstores/pgvector';
+import { MongoDBAtlasVectorSearch } from '@langchain/mongodb';
 
 import { adapter } from '@/database/adapter';
 import { documentRepo } from '@/database/repositories';
@@ -185,7 +187,11 @@ router.delete('/documents/:id', async (req, res) => {
 
   try {
     const store = await getVectorStore();
-    await store.delete({ filter: { documentId: req.params.id } });
+    if (adapter.type === 'mongoose') {
+      await (store as MongoDBAtlasVectorSearch).delete({ ids: [req.params.id] });
+    } else {
+      await (store as PGVectorStore).delete({ filter: { documentId: req.params.id } });
+    }
   } catch {
     // best-effort
   }

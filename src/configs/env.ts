@@ -24,6 +24,8 @@ export const env = {
   SUPABASE_DATABASE_URL: process.env.SUPABASE_DATABASE_URL || '',
   SUPABASE_JWKS_URL: process.env.SUPABASE_JWKS_URL || '',
 
+  MONGODB_URI: process.env.MONGODB_URI || '',
+
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
   SERVICE_NAME: process.env.SERVICE_NAME || 'chatbot-ai',
 

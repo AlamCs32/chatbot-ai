@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import pg from 'pg';
+import type mongoose from 'mongoose';
 
 import { env } from '@/configs/env';
 import { logger } from '@/configs/logger';
@@ -9,12 +10,17 @@ import type { DatabaseAdapter } from '@/database/adapter/types';
 const { Pool } = pg;
 
 export class SupabaseAdapter implements DatabaseAdapter {
+  readonly type = 'supabase' as const;
   private client: SupabaseClient | null = null;
   private pool: pg.Pool;
   private _isConnected = false;
 
   get isConnected(): boolean {
     return this._isConnected;
+  }
+
+  getMongooseConnection(): mongoose.Connection {
+    throw new Error('getMongooseConnection() is not available for SupabaseAdapter');
   }
 
   constructor() {

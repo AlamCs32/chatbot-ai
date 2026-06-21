@@ -1,13 +1,32 @@
+import type { Collection } from 'mongodb';
 import { PGVectorStore } from '@langchain/community/vectorstores/pgvector';
+import { MongoDBAtlasVectorSearch } from '@langchain/mongodb';
 import { embeddings } from '@/rag/embeddings';
 import { adapter } from '@/database/adapter';
 
-let store: PGVectorStore | null = null;
+let pgStore: PGVectorStore | null = null;
+let mongoStore: MongoDBAtlasVectorSearch | null = null;
 
-export async function getVectorStore(): Promise<PGVectorStore> {
-  if (store) return store;
+export async function getVectorStore(): Promise<PGVectorStore | MongoDBAtlasVectorSearch> {
+  if (adapter.type === 'mongoose') {
+    if (mongoStore) return mongoStore;
 
-  store = await PGVectorStore.initialize(embeddings, {
+    const conn = adapter.getMongooseConnection();
+    const collection = conn.db!.collection('documents_vectors') as unknown as Collection;
+
+    mongoStore = new MongoDBAtlasVectorSearch(embeddings, {
+      collection,
+      indexName: 'vector_index',
+      textKey: 'text',
+      embeddingKey: 'embedding',
+    });
+
+    return mongoStore;
+  }
+
+  if (pgStore) return pgStore;
+
+  pgStore = await PGVectorStore.initialize(embeddings, {
     pool: adapter.getPool(),
     tableName: 'documents_vectors',
     columns: {
@@ -19,12 +38,13 @@ export async function getVectorStore(): Promise<PGVectorStore> {
     dimensions: 1536,
   });
 
-  return store;
+  return pgStore;
 }
 
 export async function closeVectorStore(): Promise<void> {
-  if (store) {
-    await store.end();
-    store = null;
+  if (pgStore) {
+    await pgStore.end();
+    pgStore = null;
   }
+  mongoStore = null;
 }
