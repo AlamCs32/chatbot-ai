@@ -18,7 +18,10 @@ export class SupabaseAdapter implements DatabaseAdapter {
   }
 
   constructor() {
-    this.pool = new Pool({ connectionString: env.SUPABASE_DATABASE_URL || env.DATABASE_URL });
+    this.pool = new Pool({
+      connectionString: env.SUPABASE_DATABASE_URL || env.DATABASE_URL,
+      connectionTimeoutMillis: 5000,
+    });
   }
 
   getPool(): pg.Pool {

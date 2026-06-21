@@ -25,7 +25,10 @@ export class TypeOrmAdapter implements DatabaseAdapter {
       synchronize: true,
       logging: false,
     });
-    this.pool = new Pool({ connectionString: env.DATABASE_URL });
+    this.pool = new Pool({
+      connectionString: env.DATABASE_URL,
+      connectionTimeoutMillis: 5000,
+    });
   }
 
   getPool(): pg.Pool {
