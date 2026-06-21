@@ -1,6 +1,6 @@
 import { PGVectorStore } from '@langchain/community/vectorstores/pgvector';
 import { embeddings } from '@/rag/embeddings';
-import { pool } from '@/database/pool';
+import { adapter } from '@/database/adapter';
 
 let store: PGVectorStore | null = null;
 
@@ -8,7 +8,7 @@ export async function getVectorStore(): Promise<PGVectorStore> {
   if (store) return store;
 
   store = await PGVectorStore.initialize(embeddings, {
-    pool,
+    pool: adapter.getPool(),
     tableName: 'documents_vectors',
     columns: {
       idColumnName: 'id',

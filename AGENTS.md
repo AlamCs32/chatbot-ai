@@ -49,7 +49,7 @@ src/
 │   └── documents.routes.ts        # POST/GET/GET/:id/DELETE /api/documents
 ├── middlewares/
 │   ├── correlationId.middleware.ts # x-request-id header + AsyncLocalStorage
-│   ├── errorHandler.middleware.ts  # Global error handler (generic 500)
+│   ├── errorHandler.middleware.ts  # Global error handler (status classification by error type, dev stack traces)
 │   └── requestLogger.middleware.ts # Request/response logging with timing
 ├── sessions/
 │   ├── types.ts                   # Session / SessionStore interfaces
@@ -60,9 +60,13 @@ src/
 │   ├── retriever.ts               # similaritySearch context retrieval
 │   └── vector.store.ts            # PGVectorStore singleton (table: documents_vectors)
 └── database/
+    ├── adapter/
+    │   ├── index.ts               # Exports active adapter (typeorm | supabase)
+    │   ├── types.ts               # DatabaseAdapter interface + DocumentRecord types
+    │   ├── typeorm.ts             # TypeORM adapter implementation (used currently)
+    │   └── supabase.ts            # Supabase adapter skeleton (for future integration)
     ├── pool.ts                    # Raw pg.Pool from DATABASE_URL
-    ├── data-source.ts             # TypeORM DataSource for DocumentEntity
-    ├── migrate.ts                 # Startup migration (init TypeORM, create vector extension)
+    ├── migrate.ts                 # Startup migration (init adapter, create vector extension)
     └── entities/
         └── document.entity.ts     # Documents table: id(uuid), title, content, metadata(jsonb), createdAt, updatedAt
 ```
@@ -79,7 +83,7 @@ src/
 | GET    | `/api/models`          | List enabled models | —                                 | `ProviderModel[]`                    |
 | POST   | `/api/documents`       | Upload document     | `{ title?, content }`             | `{ id, title, chunks }`              |
 | GET    | `/api/documents`       | List documents      | —                                 | `[{ id, title, createdAt }]`         |
-| GET    | `/api/documents/:id`   | Get document        | —                                 | Full DocumentEntity                  |
+| GET    | `/api/documents/:id`   | Get document        | —                                 | Full DocumentRecord                  |
 | DELETE | `/api/documents/:id`   | Delete document     | —                                 | `{ ok: true }`                       |
 
 ## Middleware Pipeline (order matters)
@@ -90,7 +94,7 @@ src/
 4. `correlationId` — request ID + AsyncLocalStorage
 5. `requestLogger` — timing + status logging
 6. _routes_
-7. `errorHandler` — catch-all (returns `{ success: false, message }`)
+7. `errorHandler` — catch-all (returns `{ success: false, message }`, status classified by error type)
 
 ## AI Architecture
 
@@ -103,7 +107,7 @@ src/
 
 ## Env Vars (all in `src/configs/env.ts`)
 
-`PORT`, `NODE_ENV`, `DATABASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `DEFAULT_MODEL`, `AI_MAX_RETRIES`, `LOG_LEVEL`, `SERVICE_NAME`, `APP_URL`, `APP_NAME`
+`PORT`, `NODE_ENV`, `DATABASE_ADAPTER`, `DATABASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `DEFAULT_MODEL`, `AI_MAX_RETRIES`, `LOG_LEVEL`, `SERVICE_NAME`, `APP_URL`, `APP_NAME`
 
 ## Key Conventions
 
@@ -111,7 +115,7 @@ src/
 - **Files:** kebab-case with `.middleware.ts`, `.provider.ts`, `.routes.ts`, `.entity.ts` suffixes
 - **Classes:** PascalCase, **interfaces:** PascalCase, **functions/constants:** camelCase
 - **Async:** always `async/await`, route handlers with try/catch
-- **Error handling:** custom `RateLimitError`/`ProviderError` for AI, graceful degradation for RAG/DB
+- **Error handling:** custom `RateLimitError`/`ProviderError` for AI, graceful degradation for RAG/DB, error handler classifies status by error type
 - **TypeScript:** strict mode, `unknown` over `any`, `Record<string, unknown>` for arbitrary objects
 - **No auth:** all endpoints public
 - **No validation lib:** manual `typeof` checks

@@ -3,6 +3,7 @@ import 'dotenv/config';
 export const env = {
   PORT: Number(process.env.PORT) || 3000,
   NODE_ENV: process.env.NODE_ENV || 'development',
+  DATABASE_ADAPTER: process.env.DATABASE_ADAPTER || 'typeorm',
 
   DATABASE_URL:
     process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/chatbot_ai',
@@ -16,6 +17,12 @@ export const env = {
 
   DEFAULT_MODEL: process.env.DEFAULT_MODEL || 'google/gemini-2.0-flash-exp:free',
   AI_MAX_RETRIES: Number(process.env.AI_MAX_RETRIES) || 3,
+
+  SUPABASE_URL: process.env.SUPABASE_URL || '',
+  SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY || '',
+  SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY || '',
+  SUPABASE_DATABASE_URL: process.env.SUPABASE_DATABASE_URL || '',
+  SUPABASE_JWKS_URL: process.env.SUPABASE_JWKS_URL || '',
 
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
   SERVICE_NAME: process.env.SERVICE_NAME || 'chatbot-ai',

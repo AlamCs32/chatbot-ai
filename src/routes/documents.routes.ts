@@ -2,13 +2,12 @@ import { Router } from 'express';
 import { v4 as uuid } from 'uuid';
 import { Document } from '@langchain/core/documents';
 
-import { AppDataSource } from '@/database/data-source';
-import { DocumentEntity } from '@/database/entities/document.entity';
+import { adapter } from '@/database/adapter';
+import { documentRepo } from '@/database/repositories';
 import { getVectorStore } from '@/rag/vector.store';
 import { chunkText } from '@/rag/chunker';
 
 const router = Router();
-const repo = () => AppDataSource.getRepository(DocumentEntity);
 
 /**
  * @openapi
@@ -79,7 +78,7 @@ router.post('/documents', async (req, res) => {
     return;
   }
 
-  if (!AppDataSource.isInitialized) {
+  if (!adapter.isConnected) {
     res.status(503).json({ error: 'database not available' });
     return;
   }
@@ -87,7 +86,7 @@ router.post('/documents', async (req, res) => {
   const id = uuid();
   const docTitle = title || 'Untitled';
 
-  await repo().save({ id, title: docTitle, content });
+  await documentRepo.create({ id, title: docTitle, content, metadata: {} });
 
   const chunks = chunkText(content, docTitle);
   const docs = chunks.map(
@@ -104,15 +103,12 @@ router.post('/documents', async (req, res) => {
 });
 
 router.get('/documents', async (_req, res) => {
-  if (!AppDataSource.isInitialized) {
+  if (!adapter.isConnected) {
     res.status(503).json({ error: 'database not available' });
     return;
   }
 
-  const docs = await repo().find({
-    select: { id: true, title: true, createdAt: true },
-    order: { createdAt: 'DESC' },
-  });
+  const docs = await documentRepo.list();
   res.json(docs);
 });
 
@@ -162,12 +158,12 @@ router.get('/documents', async (_req, res) => {
  *         description: Database not available
  */
 router.get('/documents/:id', async (req, res) => {
-  if (!AppDataSource.isInitialized) {
+  if (!adapter.isConnected) {
     res.status(503).json({ error: 'database not available' });
     return;
   }
 
-  const doc = await repo().findOneBy({ id: req.params.id });
+  const doc = await documentRepo.getById(req.params.id);
   if (!doc) {
     res.status(404).json({ error: 'document not found' });
     return;
@@ -176,18 +172,16 @@ router.get('/documents/:id', async (req, res) => {
 });
 
 router.delete('/documents/:id', async (req, res) => {
-  if (!AppDataSource.isInitialized) {
+  if (!adapter.isConnected) {
     res.status(503).json({ error: 'database not available' });
     return;
   }
 
-  const doc = await repo().findOneBy({ id: req.params.id });
-  if (!doc) {
+  const ok = await documentRepo.delete(req.params.id);
+  if (!ok) {
     res.status(404).json({ error: 'document not found' });
     return;
   }
-
-  await repo().remove(doc);
 
   try {
     const store = await getVectorStore();
