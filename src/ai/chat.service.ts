@@ -1,7 +1,7 @@
 import { chatWithFallback } from '@/ai/models/router';
 import { getAllTools, getTool } from '@/ai/tools/registry';
 import type { ChatMessage } from '@/ai/types';
-import { memoryStore, createSession } from '@/sessions/memory.store';
+import { sessionStore, createSession } from '@/sessions/memory.store';
 import type { Session } from '@/sessions/types';
 
 export async function sendMessage(
@@ -12,7 +12,7 @@ export async function sendMessage(
   let session: Session | undefined;
 
   if (sessionId) {
-    session = await memoryStore.get(sessionId);
+    session = await sessionStore.get(sessionId);
   }
 
   if (!session) {
@@ -66,7 +66,7 @@ export async function sendMessage(
     const reply = finalResponse.content ?? '';
     session.messages.push({ role: 'assistant', content: reply });
     session.model = modelUsed;
-    await memoryStore.save(session);
+    await sessionStore.save(session);
 
     return { reply, sessionId: session.id, modelUsed };
   }
@@ -74,13 +74,13 @@ export async function sendMessage(
   const reply = response.content ?? '';
   session.messages.push({ role: 'assistant', content: reply });
   session.model = modelUsed;
-  await memoryStore.save(session);
+  await sessionStore.save(session);
 
   return { reply, sessionId: session.id, modelUsed };
 }
 
 export async function getHistory(sessionId: string) {
-  const session = await memoryStore.get(sessionId);
+  const session = await sessionStore.get(sessionId);
   if (!session) return null;
   return {
     id: session.id,
@@ -91,9 +91,9 @@ export async function getHistory(sessionId: string) {
 }
 
 export async function clearSession(sessionId: string): Promise<boolean> {
-  const session = await memoryStore.get(sessionId);
+  const session = await sessionStore.get(sessionId);
   if (!session) return false;
   session.messages = [];
-  await memoryStore.save(session);
+  await sessionStore.save(session);
   return true;
 }

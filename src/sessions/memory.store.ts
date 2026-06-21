@@ -1,10 +1,12 @@
 import crypto from 'node:crypto';
+import mongoose from 'mongoose';
 
+import { mongoStore } from '@/sessions/mongo.store';
 import type { Session, SessionStore } from '@/sessions/types';
 
 const sessions = new Map<string, Session>();
 
-export const memoryStore: SessionStore = {
+const memoryStore: SessionStore = {
   async get(id: string) {
     return sessions.get(id);
   },
@@ -16,6 +18,22 @@ export const memoryStore: SessionStore = {
 
   async delete(id: string) {
     sessions.delete(id);
+  },
+};
+
+function resolveStore(): SessionStore {
+  return mongoose.connection.readyState === 1 ? mongoStore : memoryStore;
+}
+
+export const sessionStore: SessionStore = {
+  async get(id) {
+    return resolveStore().get(id);
+  },
+  async save(session) {
+    return resolveStore().save(session);
+  },
+  async delete(id) {
+    return resolveStore().delete(id);
   },
 };
 
