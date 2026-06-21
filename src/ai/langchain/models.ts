@@ -4,6 +4,7 @@ import { ChatOpenAI } from '@langchain/openai';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 
 import { aiConfig } from '@/ai/config';
+import { env } from '@/configs/env';
 
 export function createLangchainModel(modelId: string): BaseChatModel | null {
   const openAIKey = aiConfig.openai.apiKey;
@@ -33,8 +34,8 @@ export function createLangchainModel(modelId: string): BaseChatModel | null {
       configuration: {
         baseURL: 'https://openrouter.ai/api/v1',
         defaultHeaders: {
-          'HTTP-Referer': process.env.APP_URL || 'http://localhost:3000',
-          'X-Title': process.env.APP_NAME || 'Chatbot AI',
+          'HTTP-Referer': env.APP_URL,
+          'X-Title': env.APP_NAME,
         },
       },
     });

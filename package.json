@@ -11,9 +11,9 @@
     ]
   },
   "scripts": {
-    "dev": "tsx watch -r tsconfig-paths/register src/index.ts",
+    "dev": "tsx watch -r tsconfig-paths/register -r dotenv src/index.ts",
     "build": "tsc",
-    "start": "node -r tsconfig-paths/register dist/index.js",
+    "start": "node -r dotenv -r tsconfig-paths/register dist/index.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
@@ -28,6 +28,8 @@
     "@types/morgan": "^1",
     "@types/node": "^26.0.0",
     "@types/pg": "^8",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "eslint": "^10.5.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.6.0",
@@ -48,6 +50,7 @@
     "@langchain/google-genai": "^2.2.0",
     "@langchain/openai": "^1.5.1",
     "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "helmet": "^8.2.0",
     "morgan": "^1.11.0",
@@ -56,6 +59,8 @@
     "pino": "^10.3.1",
     "reflect-metadata": "^0.2.2",
     "rotating-file-stream": "^3.2.9",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1",
     "tsconfig-paths": "^4.2.0",
     "typeorm": "^1.0.0",
     "uuid": "^14.0.0"

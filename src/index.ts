@@ -3,7 +3,10 @@ import 'reflect-metadata';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
 
+import { swaggerSpec } from '@/configs/swagger';
+import { env } from '@/configs/env';
 import { logger } from '@/configs/logger';
 import { correlationId } from '@/middlewares/correlationId.middleware';
 import { errorHandler } from '@/middlewares/errorHandler.middleware';
@@ -13,7 +16,7 @@ import documentRoutes from '@/routes/documents.routes';
 import { migrate } from '@/database/migrate';
 
 const app = express();
-const port = Number(process.env.PORT) || 3000;
+const port = env.PORT;
 
 app.use(helmet());
 app.use(cors());
@@ -24,6 +27,8 @@ app.use(requestLogger);
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api', chatRoutes);
 app.use('/api', documentRoutes);

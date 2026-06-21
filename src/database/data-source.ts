@@ -1,10 +1,10 @@
 import { DataSource } from 'typeorm';
 
+import { env } from '@/configs/env';
 import { DocumentEntity } from '@/database/entities/document.entity';
 
-const connectionString =
-  process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/chatbot_ai';
-
+const connectionString = env.DATABASE_URL;
+console.log({ connectionString });
 export const AppDataSource = new DataSource({
   type: 'postgres',
   url: connectionString,

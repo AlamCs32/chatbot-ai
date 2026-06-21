@@ -1,11 +1,11 @@
 import pg from 'pg';
 
+import { env } from '@/configs/env';
 import { logger } from '@/configs/logger';
 
 const { Pool } = pg;
 
-const connectionString =
-  process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/chatbot_ai';
+const connectionString = env.DATABASE_URL;
 
 export const pool = new Pool({ connectionString });
 

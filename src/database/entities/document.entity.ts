@@ -5,7 +5,7 @@ export class DocumentEntity {
   @PrimaryColumn('uuid')
   id!: string;
 
-  @Column({ default: '' })
+  @Column('varchar', { default: '' })
   title!: string;
 
   @Column('text')

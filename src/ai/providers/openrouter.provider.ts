@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 
 import type { AIProvider, ChatRequest, ChatResponse, ToolCall } from '@/ai/types';
 import { ProviderError } from '@/ai/types';
+import { env } from '@/configs/env';
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
 
@@ -13,8 +14,8 @@ export class OpenRouterProvider implements AIProvider {
       apiKey,
       baseURL: OPENROUTER_BASE,
       defaultHeaders: {
-        'HTTP-Referer': process.env.APP_URL || 'http://localhost:3000',
-        'X-Title': process.env.APP_NAME || 'Chatbot AI',
+        'HTTP-Referer': env.APP_URL,
+        'X-Title': env.APP_NAME,
       },
     });
   }

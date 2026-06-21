@@ -5,6 +5,8 @@ import path from 'node:path';
 import pino from 'pino';
 import { createStream } from 'rotating-file-stream';
 
+import { env } from '@/configs/env';
+
 export interface LogContext {
   requestId?: string;
   userId?: string;
@@ -60,17 +62,17 @@ const baseConfig: pino.LoggerOptions = {
   redact: redactConfig,
   timestamp: pino.stdTimeFunctions.isoTime,
   base: {
-    service: process.env.SERVICE_NAME || 'chatbot-ai',
-    env: process.env.NODE_ENV || 'development',
+    service: env.SERVICE_NAME,
+    env: env.NODE_ENV,
   },
 };
 
 function createBaseLogger(): pino.Logger {
-  if (process.env.NODE_ENV === 'production') {
+  if (env.NODE_ENV === 'production') {
     return pino(
       {
         ...baseConfig,
-        level: process.env.LOG_LEVEL || 'info',
+        level: env.LOG_LEVEL,
       },
       appLogStream,
     );
