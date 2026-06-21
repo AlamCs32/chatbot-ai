@@ -28,6 +28,10 @@ const router = Router();
  *               model:
  *                 type: string
  *                 description: Optional model identifier override
+ *               provider:
+ *                 type: string
+ *                 enum: [openai, anthropic, gemini, openrouter]
+ *                 description: Provider to use (picks default model for the provider)
  *     responses:
  *       200:
  *         description: AI response
@@ -48,7 +52,7 @@ const router = Router();
  *         description: AI service unavailable
  */
 router.post('/chat', async (req, res) => {
-  const { message, sessionId, model } = req.body;
+  const { message, sessionId, model, provider } = req.body;
 
   if (!message || typeof message !== 'string') {
     res.status(400).json({ error: 'message is required' });
@@ -56,7 +60,7 @@ router.post('/chat', async (req, res) => {
   }
 
   try {
-    const result = await sendMessage(sessionId, message, model);
+    const result = await sendMessage(sessionId, message, model, provider);
     res.json(result);
   } catch (err) {
     res.status(503).json({ error: 'AI service unavailable', detail: (err as Error).message });

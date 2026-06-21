@@ -15,6 +15,7 @@ export const env = {
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',
 
+  DEFAULT_PROVIDER: process.env.DEFAULT_PROVIDER || 'openrouter',
   DEFAULT_MODEL: process.env.DEFAULT_MODEL || 'google/gemini-2.0-flash-exp:free',
   AI_MAX_RETRIES: Number(process.env.AI_MAX_RETRIES) || 3,
 

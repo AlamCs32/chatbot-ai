@@ -125,6 +125,13 @@ export function getModelsByProvider(provider: string): ProviderModel[] {
   return models.filter((m) => m.provider === provider && m.enabled);
 }
 
+export function getDefaultModelForProvider(provider: string): string | undefined {
+  const candidates = fallbackChains[provider];
+  if (candidates && candidates.length > 0) return candidates[0];
+  const first = models.find((m) => m.provider === provider && m.enabled);
+  return first?.id;
+}
+
 const fallbackChains: Record<string, string[]> = {
   openai: ['gpt-4o-mini', 'gpt-4o', 'o3-mini', 'claude-sonnet-4-20250514', 'gemini-2.5-flash'],
   anthropic: [

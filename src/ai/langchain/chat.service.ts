@@ -4,9 +4,10 @@ import type { ToolDefinition } from '@langchain/core/language_models/base';
 
 import { createLangchainModel } from '@/ai/langchain/models';
 import { getAllTools, getTool } from '@/ai/tools/registry';
-import { getFallbackChain } from '@/ai/models/registry';
+import { getFallbackChain, getDefaultModelForProvider } from '@/ai/models/registry';
 import { retrieveContext } from '@/rag/retriever';
 import { memoryStore, createSession } from '@/sessions/memory.store';
+import { env } from '@/configs/env';
 import type { Session } from '@/sessions/types';
 import type { ChatMessage } from '@/ai/types';
 
@@ -56,6 +57,7 @@ export async function sendMessage(
   sessionId: string | undefined,
   userMessage: string,
   model?: string,
+  provider?: string,
 ): Promise<{ reply: string; sessionId: string; modelUsed: string }> {
   let session: Session | undefined;
 
@@ -64,11 +66,16 @@ export async function sendMessage(
   }
 
   if (!session) {
-    session = createSession(model);
+    const resolved = provider
+      ? getDefaultModelForProvider(provider) || model || env.DEFAULT_MODEL
+      : model || env.DEFAULT_MODEL;
+    session = createSession(resolved);
   }
 
   if (model) {
     session.model = model;
+  } else if (provider) {
+    session.model = getDefaultModelForProvider(provider) || session.model;
   }
 
   session.messages.push({ role: 'user', content: userMessage });
