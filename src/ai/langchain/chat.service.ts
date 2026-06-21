@@ -60,6 +60,7 @@ export async function sendMessage(
   provider?: string,
 ): Promise<{ reply: string; sessionId: string; modelUsed: string }> {
   let session: Session | undefined;
+  let isNewSession = false;
 
   if (sessionId) {
     session = await memoryStore.get(sessionId);
@@ -70,6 +71,7 @@ export async function sendMessage(
       ? getDefaultModelForProvider(provider) || model || env.DEFAULT_MODEL
       : model || env.DEFAULT_MODEL;
     session = createSession(resolved);
+    isNewSession = true;
   }
 
   if (model) {
@@ -78,25 +80,27 @@ export async function sendMessage(
     session.model = getDefaultModelForProvider(provider) || session.model;
   }
 
+  if (isNewSession) {
+    session.messages.push({
+      role: 'system',
+      content:
+        'You are a helpful AI assistant. You remember the full conversation history and use it to provide coherent, context-aware responses.',
+    });
+    await memoryStore.save(session);
+  }
+
   session.messages.push({ role: 'user', content: userMessage });
 
   const context = await retrieveContext(userMessage);
   if (context) {
     const ragMsg: ChatMessage = {
       role: 'system',
-      content: `You are a helpful assistant with access to a knowledge base. Use the following context to answer the user's question when relevant:\n\n${context}`,
+      content: `Relevant knowledge base context:\n\n${context}`,
     };
-    const insertIdx = session.messages.length - 1;
-    session.messages.splice(insertIdx, 0, ragMsg);
+    session.messages.push(ragMsg);
   }
 
   const modelUsed = await runChat(session);
-
-  if (context) {
-    session.messages = session.messages.filter(
-      (m) => !m.content.startsWith('You are a helpful assistant with access'),
-    );
-  }
 
   const reply = [...session.messages].reverse().find((m) => m.role === 'assistant')?.content ?? '';
 
@@ -163,7 +167,7 @@ export async function getHistory(sessionId: string) {
   return {
     id: session.id,
     model: session.model,
-    messages: session.messages.filter((m) => m.role !== 'system'),
+    messages: session.messages,
     createdAt: session.createdAt,
   };
 }
