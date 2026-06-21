@@ -1,31 +1,31 @@
-import js from "@eslint/js";
-import globals from "globals";
-import tseslint from "typescript-eslint";
+import js from '@eslint/js';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
 export default [
-    { ignores: [".yarn/"] },
+  { ignores: ['.yarn/'] },
 
-    js.configs.recommended,
+  js.configs.recommended,
 
-    ...tseslint.configs.recommended,
+  ...tseslint.configs.recommended,
 
-    {
-        files: ["**/*.{js,mjs,cjs,ts}"],
+  {
+    files: ['**/*.{js,mjs,cjs,ts}'],
 
-        languageOptions: {
-            globals: {
-                ...globals.node,
-            },
-        },
-
-        rules: {
-            "no-console": "warn",
-            "@typescript-eslint/no-unused-vars": [
-                "error",
-                {
-                    argsIgnorePattern: "^_",
-                },
-            ],
-        },
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
     },
+
+    rules: {
+      'no-console': 'warn',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
 ];
