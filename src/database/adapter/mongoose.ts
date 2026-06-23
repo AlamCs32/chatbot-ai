@@ -53,9 +53,31 @@ export class MongooseAdapter implements DatabaseAdapter {
 
     ensureDnsServers();
 
-    await mongoose.connect(uri);
+    // Ensure the URI includes a database name — MongoDB driver requires it
+    let connectUri = uri;
+    if (!connectUri.includes('/?') && !connectUri.match(/\/\w+\?/)) {
+      const hasTrailingSlash = connectUri.endsWith('/');
+      connectUri = `${connectUri}${hasTrailingSlash ? '' : '/'}chatbot_ai`;
+    }
+    // Handle case where URI has `?` but no database path (e.g. host/?param=val)
+    if (
+      connectUri === uri &&
+      !connectUri.split('?')[0].endsWith('/') &&
+      !connectUri.split('?')[0].includes('/')
+    ) {
+      const qIndex = connectUri.indexOf('?');
+      connectUri =
+        qIndex === -1
+          ? `${connectUri}/chatbot_ai`
+          : `${connectUri.slice(0, qIndex)}/chatbot_ai?${connectUri.slice(qIndex + 1)}`;
+    }
+
+    await mongoose.connect(connectUri);
     this._isConnected = true;
-    logger.info('database connected (mongodb)');
+    logger.info(
+      { uri: connectUri.replace(/\/\/[^@]+@/, '//***@') },
+      'database connected (mongodb)',
+    );
   }
 
   async disconnect(): Promise<void> {

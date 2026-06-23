@@ -28,6 +28,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
+app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api', chatRoutes);
@@ -36,15 +37,22 @@ app.use('/api', documentRoutes);
 app.use(errorHandler);
 
 async function start() {
+  let dbConnected = false;
   try {
     await migrate();
+    dbConnected = true;
   } catch (err) {
-    logger.warn({ err }, 'database migration failed — running without db');
+    logger.error(
+      { err, adapter: env.DATABASE_ADAPTER },
+      'database migration failed — sessions will use in-memory storage only and NOT persist across restarts',
+    );
   }
 
   app.listen(port, () => {
-    logger.info({ port }, 'server started');
+    logger.info({ port, dbConnected }, 'server started');
   });
 }
+
+export { app };
 
 start();

@@ -32,4 +32,8 @@ export const env = {
 
   APP_URL: process.env.APP_URL || 'http://localhost:3000',
   APP_NAME: process.env.APP_NAME || 'Chatbot AI',
+
+  MEMORY_EXTRACTION_MODEL:
+    process.env.MEMORY_EXTRACTION_MODEL || 'google/gemini-2.0-flash-exp:free',
+  MEMORY_RETRIEVAL_COUNT: Number(process.env.MEMORY_RETRIEVAL_COUNT) || 8,
 };

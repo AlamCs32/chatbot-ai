@@ -1,6 +1,11 @@
 import { Router } from 'express';
 
-import { sendMessage, getHistory, clearSession } from '@/ai/langchain/chat.service';
+import {
+  sendMessage,
+  sendMessageStream,
+  getHistory,
+  clearSession,
+} from '@/ai/langchain/chat.service';
 import { models } from '@/ai/models/registry';
 
 const router = Router();
@@ -52,7 +57,7 @@ const router = Router();
  *         description: AI service unavailable
  */
 router.post('/chat', async (req, res) => {
-  const { message, sessionId, model, provider } = req.body;
+  const { message, sessionId, model, provider, userId } = req.body;
 
   if (!message || typeof message !== 'string') {
     res.status(400).json({ error: 'message is required' });
@@ -60,10 +65,83 @@ router.post('/chat', async (req, res) => {
   }
 
   try {
-    const result = await sendMessage(sessionId, message, model, provider);
+    const result = await sendMessage(sessionId, message, model, provider, userId);
     res.json(result);
   } catch (err) {
     res.status(503).json({ error: 'AI service unavailable', detail: (err as Error).message });
+  }
+});
+
+/**
+ * @openapi
+ * /api/chat/stream:
+ *   post:
+ *     summary: Send a message and receive a streaming (SSE) response
+ *     tags: [Chat]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [message]
+ *             properties:
+ *               message:
+ *                 type: string
+ *               sessionId:
+ *                 type: string
+ *               model:
+ *                 type: string
+ *               provider:
+ *                 type: string
+ *                 enum: [openai, anthropic, gemini, openrouter]
+ *     responses:
+ *       200:
+ *         description: SSE stream of tokens
+ *         content:
+ *           text/event-stream:
+ *             schema:
+ *               type: string
+ *       400:
+ *         description: Missing message
+ *       503:
+ *         description: AI service unavailable
+ */
+router.post('/chat/stream', async (req, res) => {
+  const { message, sessionId, model, provider, userId } = req.body;
+
+  if (!message || typeof message !== 'string') {
+    res.status(400).json({ error: 'message is required' });
+    return;
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('X-Accel-Buffering', 'no');
+  // Write keepalive before any await to flush headers (req.on('close') fires prematurely in Express 5)
+  res.write(':ok\n\n');
+
+  try {
+    const { sessionId: newSessionId, modelUsed } = await sendMessageStream(
+      sessionId,
+      message,
+      (token: string) => {
+        try {
+          res.write(`data: ${JSON.stringify({ token })}\n\n`);
+        } catch {
+          /* ignore */
+        }
+      },
+      model,
+      provider,
+      userId,
+    );
+
+    res.write(`data: ${JSON.stringify({ done: true, sessionId: newSessionId, modelUsed })}\n\n`);
+    res.end();
+  } catch (err) {
+    res.write(`data: ${JSON.stringify({ error: (err as Error).message })}\n\n`);
+    res.end();
   }
 });
 
