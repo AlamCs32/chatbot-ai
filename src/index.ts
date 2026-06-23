@@ -11,9 +11,8 @@ import { logger } from '@/configs/logger';
 import { correlationId } from '@/middlewares/correlationId.middleware';
 import { errorHandler } from '@/middlewares/errorHandler.middleware';
 import { requestLogger } from '@/middlewares/requestLogger.middleware';
-import chatRoutes from '@/routes/chat.routes';
-import documentRoutes from '@/routes/documents.routes';
 import { migrate } from '@/database/migrate';
+import appRoutes from '@/routes';
 
 const app = express();
 const port = env.PORT;
@@ -31,9 +30,7 @@ app.get('/health', (_req, res) => {
 app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.use('/api', chatRoutes);
-app.use('/api', documentRoutes);
-
+app.use(appRoutes);
 app.use(errorHandler);
 
 async function start() {
