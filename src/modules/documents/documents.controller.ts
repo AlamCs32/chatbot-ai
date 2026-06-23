@@ -8,22 +8,36 @@ import { adapter } from '@/database/adapter';
 import { documentRepo } from '@/database/repositories';
 import { getVectorStore } from '@/rag/vector.store';
 import { chunkText } from '@/rag/chunker';
+import { extractTextFromBuffer, getTitleFromFilename } from '@/modules/documents/upload';
 
 export async function handleCreateDocument(req: Request, res: Response): Promise<void> {
-  const { title, content } = req.body;
-
-  if (!content || typeof content !== 'string') {
-    res.status(400).json({ error: 'content is required' });
-    return;
-  }
-
   if (!adapter.isConnected) {
     res.status(503).json({ error: 'database not available' });
     return;
   }
 
+  let content: string;
+  let docTitle: string;
+
+  const file = req.file;
+
+  if (file) {
+    content = await extractTextFromBuffer(file.buffer, file.originalname);
+    docTitle = getTitleFromFilename(file.originalname);
+    if (req.body.title && typeof req.body.title === 'string') {
+      docTitle = req.body.title;
+    }
+  } else {
+    const { title, content: bodyContent } = req.body;
+    if (!bodyContent || typeof bodyContent !== 'string') {
+      res.status(400).json({ error: 'content is required' });
+      return;
+    }
+    content = bodyContent;
+    docTitle = title || 'Untitled';
+  }
+
   const id = uuid();
-  const docTitle = title || 'Untitled';
 
   await documentRepo.create({ id, title: docTitle, content, metadata: {} });
 

@@ -3,7 +3,7 @@
 ## Overview
 
 - **Name:** chatbot_ai — AI chatbot with RAG document management, multi-provider AI support, session management
-- **Stack:** TypeScript 6.0, Express 5.2, TypeORM 1.0 (PostgreSQL), LangChain.js, Pino logger
+- **Stack:** TypeScript 6.0, Express 5.2, TypeORM 1.0 (PostgreSQL), LangChain.js, Pino logger, Multer, pdf-parse, Mammoth
 - **Runtime:** Node.js (ES2022), run via `tsx` in dev, compiled to `dist/` for prod
 - **Package mgr:** Yarn 4.9 with `nodeLinker: node-modules`
 
@@ -44,9 +44,18 @@ src/
 │   └── tools/
 │       ├── registry.ts            # registerTool / getTool / getAllTools
 │       └── weather.tool.ts        # Mock weather tool
-├── routes/
-│   ├── chat.routes.ts             # POST /api/chat, GET /api/chat/:id, DELETE /api/chat/:id, GET /api/models
-│   └── documents.routes.ts        # POST/GET/GET/:id/DELETE /api/documents
+├── modules/
+│   ├── chat/
+│   │   ├── chat.controller.ts     # Chat HTTP handlers (send, stream, history, clear)
+│   │   └── chat.routes.ts         # POST /api/chat, POST /api/chat/stream, GET /api/chat/:id, DELETE /api/chat/:id
+│   ├── documents/
+│   │   ├── documents.controller.ts # Document HTTP handlers (CRUD + file upload)
+│   │   ├── documents.routes.ts    # POST/GET/GET/:id/DELETE /api/documents (multer file upload)
+│   │   ├── upload.ts              # Text extraction from .txt/.pdf/.docx buffers
+│   │   └── mammoth.d.ts           # Type declaration for mammoth (docx parser)
+│   └── models/
+│       ├── models.controller.ts   # Models HTTP handler
+│       └── models.routes.ts       # GET /api/models
 ├── middlewares/
 │   ├── correlationId.middleware.ts # x-request-id header + AsyncLocalStorage
 │   ├── errorHandler.middleware.ts  # Global error handler (status classification by error type, dev stack traces)
@@ -73,18 +82,18 @@ src/
 
 ## API Routes
 
-| Method | Path                   | Purpose             | Req Body                          | Success Response                     |
-| ------ | ---------------------- | ------------------- | --------------------------------- | ------------------------------------ |
-| GET    | `/health`              | Health check        | —                                 | `{ status: "ok" }`                   |
-| GET    | `/api-docs`            | Swagger UI          | —                                 | HTML page                            |
-| POST   | `/api/chat`            | Send message        | `{ message, sessionId?, model? }` | `{ reply, sessionId, modelUsed }`    |
-| GET    | `/api/chat/:sessionId` | Get history         | —                                 | `{ id, model, messages, createdAt }` |
-| DELETE | `/api/chat/:sessionId` | Clear session       | —                                 | `{ ok: boolean }`                    |
-| GET    | `/api/models`          | List enabled models | —                                 | `ProviderModel[]`                    |
-| POST   | `/api/documents`       | Upload document     | `{ title?, content }`             | `{ id, title, chunks }`              |
-| GET    | `/api/documents`       | List documents      | —                                 | `[{ id, title, createdAt }]`         |
-| GET    | `/api/documents/:id`   | Get document        | —                                 | Full DocumentRecord                  |
-| DELETE | `/api/documents/:id`   | Delete document     | —                                 | `{ ok: true }`                       |
+| Method | Path                   | Purpose             | Req Body                                            | Success Response                     |
+| ------ | ---------------------- | ------------------- | --------------------------------------------------- | ------------------------------------ |
+| GET    | `/health`              | Health check        | —                                                   | `{ status: "ok" }`                   |
+| GET    | `/api-docs`            | Swagger UI          | —                                                   | HTML page                            |
+| POST   | `/api/chat`            | Send message        | `{ message, sessionId?, model? }`                   | `{ reply, sessionId, modelUsed }`    |
+| GET    | `/api/chat/:sessionId` | Get history         | —                                                   | `{ id, model, messages, createdAt }` |
+| DELETE | `/api/chat/:sessionId` | Clear session       | —                                                   | `{ ok: boolean }`                    |
+| GET    | `/api/models`          | List enabled models | —                                                   | `ProviderModel[]`                    |
+| POST   | `/api/documents`       | Upload document     | `{ title?, content }` or `multipart: file + title?` | `{ id, title, chunks }`              |
+| GET    | `/api/documents`       | List documents      | —                                                   | `[{ id, title, createdAt }]`         |
+| GET    | `/api/documents/:id`   | Get document        | —                                                   | Full DocumentRecord                  |
+| DELETE | `/api/documents/:id`   | Delete document     | —                                                   | `{ ok: true }`                       |
 
 ## Middleware Pipeline (order matters)
 
@@ -117,6 +126,7 @@ src/
 - **Async:** always `async/await`, route handlers with try/catch
 - **Error handling:** custom `RateLimitError`/`ProviderError` for AI, graceful degradation for RAG/DB, error handler classifies status by error type
 - **TypeScript:** strict mode, `unknown` over `any`, `Record<string, unknown>` for arbitrary objects
+- **File upload:** Multer memory storage, text extraction via pdf-parse (PDF) / mammoth (DOCX) / native (TXT)
 - **No auth:** all endpoints public
 - **No validation lib:** manual `typeof` checks
 - **No tests** exist in the project

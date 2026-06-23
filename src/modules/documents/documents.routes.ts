@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import multer from 'multer';
 
 import {
   handleCreateDocument,
@@ -8,6 +9,7 @@ import {
 } from '@/modules/documents/documents.controller';
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 /**
  * @openapi
@@ -18,6 +20,17 @@ const router = Router();
  *     requestBody:
  *       required: true
  *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: Document file (.txt, .pdf, .docx)
+ *               title:
+ *                 type: string
+ *                 description: Optional title override
  *         application/json:
  *           schema:
  *             type: object
@@ -68,7 +81,7 @@ const router = Router();
  *       503:
  *         description: Database not available
  */
-router.post('/documents', handleCreateDocument);
+router.post('/documents', upload.single('file'), handleCreateDocument);
 router.get('/documents', handleListDocuments);
 
 /**
